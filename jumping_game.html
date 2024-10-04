@@ -15,31 +15,137 @@
     /* The container moves the text to the middle of the screen */
     #gameover-container {
         transform: translate(500px,200px);
+        display: none;
     }
     #gameover {
         font-family: Dosis, sans-serif;
     }
+
+    @keyframes cloud-animation {
+        from { transform: translateX(1000px); }
+        to   { transform: translateX(-120px); }
+    }
+
+    .cloud {
+        animation-name: cloud-animation;
+        animation-timing-function: linear;
+        animation-iteration-count: infinite;
+        animation-duration: 10s;
+    }
+
+    /* Different delays for each cloud */
+    #cloud1 { animation-delay: -5s; }
+    #cloud2 { animation-delay: -10s; }
+
+
+    @keyframes obstacle-animation {
+        from { transform: translateX(1000px); }
+        to   { transform: translateX(-70px); }
+    }
+
+    #obstacle {
+        animation-name: none;
+        animation-timing-function: linear;
+        animation-iteration-count: 1; /* debug */
+        animation-duration: 7s;
+        display: none;
+    }
+
+    @keyframes player-animation {
+        0%   { transform: translateY(0px); }
+        50%  { transform: translateY(-50px); }
+        100% { transform: translateY(0px); }
+    }
+
+    #player {
+        animation-name: none;
+        animation-timing-function: linear;
+        animation-iteration-count: 1;
+        animation-duration: 0.8s;
+    }
+
+    @keyframes rotate {
+        from { transform: translate(50%, 50%) rotate(0deg) scale(0);  opacity: 0}
+        to { transform: translate(50%, 50%) rotate(360deg) scale(1);  opacity: 1}
+    }
+
+    .rotate {
+        animation: rotate 1.5s ease forwards;
+    }
     </style>
+
     <script>
     // Check whether the game is over if the player is near the obstacle
     function checkGameover() {
 
         // You need to keep on checking for the gameover situation here
 
-        // Read the transform property of the player and obstacle
+        // Read the transform property
+        let playerTransform = $('#player').css("transform");
+        let obstacleTransform = $('#obstacle').css("transform");
 
-        // Extract the appropriate numbers
+        if (obstacleTransform !== 'none'){
+            
+            // Extract the appropriate numbers of obstacle
+            let obstacleValues = obstacleTransform.match(/matrix\(([^)]+)\)/);
 
-        // Compare the numbers for the gameover situation
+            let obstacleNums = obstacleValues[1].split(',').map(Number); 
+            let obstacleX = obstacleNums[4];
+
+            //console.log("obstacleX: ",obstacleX);
+
+            // Compare the numbers for the gameover situation
+
+            // Check if the player is on the ground
+            let isPlayerNearGround = (playerTransform === 'none');
+
+            if(playerTransform !== 'none'){
+
+                // Extract the appropriate numbers of player
+                let playerValues = playerTransform.match(/matrix\(([^)]+)\)/);
+
+                let playerNums = playerValues[1].split(',').map(Number); 
+                let playerY = playerNums[5];
+
+                //console.log("playerY: ",playerY);
+
+                isPlayerNearGround = playerY >=0;
+            }
+
+            // Check if the obstacle is under the player
+            let isObstacleUnderPlayer = obstacleX < 110 && obstacleX > 40;
+
+            // Check if game over conditions are met
+            if (isPlayerNearGround && isObstacleUnderPlayer) {
+                // Stop all animations
+                document.getElementById("player").style.animationPlayState = "paused";
+                document.getElementById("obstacle").style.animationPlayState = "paused";
+                document.getElementById("cloud1").style.animationPlayState = "paused";
+                document.getElementById("cloud2").style.animationPlayState = "paused";
+
+                // Show the game over text with animation
+                $('#gameover-container').show();
+                $('#gameover-container').addClass('rotate');
+
+                return; // Exit to stop further checks
+            }
+        }
 
         // Request to check again
-        setTimeout(checkGameover, 100);
+        setTimeout(checkGameover, 10);
     }
 
     // Make an obstacle by starting the obstacle animation
     function makeObstacle() {
 
         // You need to show the obstacle and start the animation here
+        let obstacle = document.getElementById("obstacle");
+
+        // Show the obstacle by changing its display property
+        obstacle.style.display = "inline"; 
+
+        // Start the animation by setting the animation-name
+        obstacle.style.animationName = "obstacle-animation";
 
     }
 
@@ -47,6 +153,10 @@
     function jump() {
 
         // You need to start the player jumping animation here
+        const player = document.getElementById("player");
+
+        // Start the animation by setting the animation-name
+        player.style.animationName = "player-animation";
 
     }
 
@@ -63,7 +173,24 @@
 
             // You need to hide the obstacle and stop the animation here
 
+            // Hide the obstacle
+            $(this).hide();
+
+            // Stop the animation
+            this.style.animationName = "none";
+
             // You will make another obstacle later
+
+            // Increase speed by reducing animation duration
+            let currentDuration = parseFloat($('#obstacle').css("animation-duration")); // Convert to a number
+            //console.log("currentDuration = ",currentDuration);
+            const newDuration = Math.max(0.5, currentDuration - 1); // Ensure it doesn't go below 0.5 seconds
+            this.style.animationDuration = newDuration + "s"; // Set the new duration
+
+            // Make a new obstacle after a random time
+            let RamTime = Math.random() * 2000;
+            //console.log("RamTime = ", RamTime);
+            setTimeout(makeObstacle, RamTime);
 
         });
 
@@ -71,6 +198,7 @@
         $("#player").on("animationend", function() {
 
             // You need to stop the animation here
+            this.style.animationName = "none";
 
         });
 
@@ -82,12 +210,37 @@
     });
     </script>
 </head>
+
 <body>
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 400">
+
+        <defs>
+            <style>.a{fill:url(#a);}.b{fill:url(#b);}.c{fill:url(#c);}.d{fill:#fff;}.e{fill:#d35227;}.f{fill:url(#d);}.g{fill:url(#e);}.h{fill:url(#f);}.i{fill:url(#g);}.j{fill:url(#h);}.k{fill:#b81e24;}.l{fill:url(#i);}</style>
+            <linearGradient id="a" x1="110.5" y1="10.5" x2="210.5" y2="10.5" gradientTransform="translate(339.5 339.5)" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#8fc31f"/><stop offset="1" stop-color="#006934"/></linearGradient><linearGradient id="b" x1="350" y1="150" x2="650" y2="150" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#2ea7e0"/><stop offset="1" stop-color="#1d2088"/></linearGradient><radialGradient id="c" cx="34.89" cy="300.28" r="99.58" gradientTransform="translate(284.35 265.38) rotate(90) scale(1 0.83)" gradientUnits="userSpaceOnUse"><stop offset="0.15" stop-color="#b28247"/><stop offset="0.34" stop-color="#8c6234"/><stop offset="0.69" stop-color="#40220f"/><stop offset="0.89" stop-color="#2f1c13"/><stop offset="1" stop-color="#231815"/></radialGradient><linearGradient id="d" x1="855.79" y1="275.55" x2="864.15" y2="252.58" gradientTransform="matrix(-1, 0, 0, 1, 969.93, 0)" gradientUnits="userSpaceOnUse"><stop offset="0.12" stop-color="#81161b"/><stop offset="0.65" stop-color="#c11e25"/></linearGradient><linearGradient id="e" x1="801.49" y1="157.77" x2="866.96" y2="303.56" gradientTransform="matrix(-1, 0, 0, 1, 969.93, 0)" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#e99158"/><stop offset="0.01" stop-color="#91191f"/><stop offset="0.46" stop-color="#e99158"/><stop offset="0.9" stop-color="#701116"/><stop offset="0.93" stop-color="#721317"/><stop offset="0.95" stop-color="#7b1b18"/><stop offset="0.96" stop-color="#89271c"/><stop offset="0.98" stop-color="#9d3920"/><stop offset="0.99" stop-color="#b75026"/><stop offset="1" stop-color="#d66c2e"/><stop offset="1" stop-color="#e57a31"/></linearGradient><linearGradient id="f" x1="874.91" y1="304.67" x2="892.38" y2="256.66" gradientTransform="matrix(-1, 0, 0, 1, 969.93, 0)" gradientUnits="userSpaceOnUse"><stop offset="0.44" stop-color="#c11e25"/><stop offset="0.89" stop-color="#e99132"/></linearGradient><linearGradient id="g" x1="839.52" y1="293.52" x2="839.52" y2="150.44" gradientTransform="matrix(-1, 0, 0, 1, 969.93, 0)" gradientUnits="userSpaceOnUse"><stop offset="0.01" stop-color="#9f1b21"/><stop offset="0.6" stop-color="#c11e25"/><stop offset="1" stop-color="#e25e14"/></linearGradient><linearGradient id="h" x1="884.22" y1="275.53" x2="871.51" y2="290.63" gradientTransform="matrix(-1, 0, 0, 1, 969.93, 0)" gradientUnits="userSpaceOnUse"><stop offset="0.01" stop-color="#ac1c22"/><stop offset="0.8" stop-color="#670f13"/></linearGradient><linearGradient id="i" x1="853.87" y1="298.37" x2="874.91" y2="240.58" xlink:href="#d"/>
+        </defs>
+        
+        <!-- The sky and ground -->
+        <rect class="b" x="350" y="-350" width="300" height="1000" transform="translate(350 650) rotate(-90)"/>
+        <rect class="a" x="450" y="-150" width="100" height="1000" transform="translate(850 -150) rotate(90)"/>
+
+        <g id="cloud1" class="cloud">
+            <path class="d" d="M120,74a20,20,0,0,1-20,20H20a20,20,0,0,1-1-40c0-.17,0-.35,0-.53A18.5,18.5,0,0,1,47.37,37.85,32,32,0,0,1,107,54c0,.42,0,.83,0,1.25A20,20,0,0,1,120,74Z"/>        </g>
+
+        <g id="cloud2" class="cloud">
+            <path class="d" d="M120,110a20,20,0,0,1-20,20H20a20,20,0,0,1-1-40c0-.17,0-.35,0-.53A18.5,18.5,0,0,1,47.37,73.85,32,32,0,0,1,107,90c0,.42,0,.83,0,1.25A20,20,0,0,1,120,110Z"/>        </g>
+
+        <g id="obstacle">
+            <rect class="c" y="300" width="70" height="100"/>
+        </g>
+
+        <g id="player">
+            <path class="e" d="M110.07,259.72l-2.93-7.63s10,12,13.47,20.65-5.75.67-5.75.67l-4.79-13.69Z"/><path class="f" d="M107.14,252.09s2.93,10.66,1.67,17.87,6.89,5,6.89,5a2.65,2.65,0,0,0,1.3-2.67c-.35-1.81-2.26-8.76-9.86-20.22Z"/><path class="g" d="M96.62,278.36c18.12.12,24.34-8.21,24.34-8.21,12.16-12.49,7.51-27.29,3.86-46.75-3.52-18.92-.52-35.54,7.11-50A73.25,73.25,0,0,1,151,150.44a6.83,6.83,0,0,1,.88,0c.7,0,.45.7.45.7s-16.77,13.69-15.84,47a66.24,66.24,0,0,0,4,21.16c1.4,3.87,2.67,6.2,4,10.15,3,8.53,5.69,14.25,5.08,29.8-2.44,29.91-29,37.79-29,37.79a45.66,45.66,0,0,1-13.43,3.23,241.44,241.44,0,0,1-10.86-21.9Z"/><path class="h" d="M68.14,260.09l1,0a30.19,30.19,0,0,0,27.14,18.31,241.44,241.44,0,0,0,10.86,21.9c-1.05.08-2.13.13-3.23.13C94.75,300.4,89.5,297,89.5,297,66.67,285.31,68.14,260.09,68.14,260.09Z"/><path class="i" d="M150.34,150.75A64.27,64.27,0,0,0,131,173.37c-7.62,14.49-10.63,31.11-7.11,50,3.66,19.46,8.32,34.26-3.83,46.75,0,0-2.93,3.92-10.59,6.32,5.58,7.34,11.76,13.85,17.76,17a42.42,42.42,0,0,0,21.43-34.27c.6-15.55-2.15-21.27-5.06-29.8-1.4-3.95-2.67-6.28-4.06-10.15a66.55,66.55,0,0,1-4-21.16c-.93-33.35,15.84-47,15.84-47s.17-1.21-1-.35Z"/><path class="e" d="M90.51,251.58l-1.75-8.72s11.61,21.9,26.63,30.85l11.8,19.81-6,2.59-19.76-21.55-11-23Z"/><path class="j" d="M81.23,274.58a30.87,30.87,0,0,0,14.43,3.78h.23c3.87,11.22,7.63,18,10.48,21.91-.82.05-1.66.1-2.5.12C89.56,293,83.66,282.28,81.23,274.58Z"/><path class="k" d="M68.16,260.06a29.73,29.73,0,0,0,13.07,14.52c2.43,7.7,8.33,18.38,22.64,25.8l-.93,0c-9.13,0-14.39-3.36-14.39-3.36C62.47,283.65,68.16,260.06,68.16,260.06Z"/><path class="l" d="M88.76,242.86s9.09,18.54,20.68,33.61c5.58,7.34,11.76,13.85,17.76,17a35.78,35.78,0,0,1-7.59,3.52,47,47,0,0,1-13.24,3.22c-2.85-3.94-6.61-10.69-10.48-21.91-.61-1.79-1.25-3.73-1.89-5.82-6.38-21.14-5.24-29.67-5.24-29.67Z"/>
+        </g>
+
         <!-- The game over text -->
         <g id="gameover-container">
             <text id="gameover" x="0" y="0" fill="red"
-                  font-size="80px" text-anchor="middle">Game Over</text>
+                    font-size="80px" text-anchor="middle">Game Over</text>
         </g>
     </svg>
 </html>
